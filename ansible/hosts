@@ -1,0 +1,1 @@
+gitlab-ci ansible_ssh_host='{{ vm_external_ip }}' ansible_ssh_user=appuser ansible_ssh_private_key_file=~/.ssh/appuser

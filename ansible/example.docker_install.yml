@@ -1,0 +1,53 @@
+---
+- name:             install Docker
+  hosts:            gitlab-ci
+  gather_facts:     no
+  become:           yes
+  vars:
+    vm_external_ip: <YOU_VM_EXTERNAL_IP> # Необходимо указать Ваш IP-адрес виртуальной машины
+
+  tasks:
+  - name:           Install python for Ansible
+    raw:            test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+    changed_when:   false
+
+  # Добавим ключ репозитория для последующей работы с ним
+  - name:           Add APT key
+    apt_key:
+      url:          https://download.docker.com/linux/ubuntu/gpg
+      state:        present
+
+ # Подключаем репозиторий с пакетами docker
+  - name:           Add APT repository
+    apt_repository:
+      repo:         deb https://download.docker.com/linux/ubuntu xenial stable
+      update_cache: yes
+      state:        present
+
+  - name:           Install (or update) docker and python packages
+    apt:            "name={{ item }} state=latest"
+    with_items:
+      - docker-ce
+      - docker-compose
+
+# Подготовим окружение, создав директории
+  - name: create multiple directory
+    file:
+      path: "{{ item }}"
+      state: directory
+      recurse: yes
+    with_items:
+        - '/srv/gitlab/config'
+        - '/srv/gitlab/data'
+        - '/srv/gitlab/logs'
+
+  - name: set docker-compose file
+    template:
+      src: templates/docker-compose.yml.j2 # В шаблоне используется переменная {{ vm_external_ip }}
+      dest: /srv/gitlab/docker-compose.yml
+
+# docker-compose up
+  - name: "docker-compose > up"
+    command: "docker-compose -f /srv/gitlab/docker-compose.yml up -d"
+    args:
+      chdir: "/srv/gitlab/"
