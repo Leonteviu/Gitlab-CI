@@ -1,0 +1,62 @@
+stages:
+  - build
+  - test
+  - review
+  - stage
+  - production
+
+build:
+  stage: build
+  script:
+    - echo 'Building'
+
+tests:
+  stage: test
+  script:
+    - echo 'Testing 1'
+
+linters:
+  stage: test
+  script:
+    - echo 'Testing 2'
+
+autodeploy dev:
+  stage: review
+  script:
+    - echo 'Deploy'
+  environment:
+    name: dev
+    url: http://dev.example.com
+
+branch review:
+  stage: review
+  script: echo "Deploy to $CI_ENVIRONMENT_SLUG"
+  environment:
+    name: review/$CI_COMMIT_REF_NAME
+    url: http://$CI_ENVIRONMENT_SLUG.example.com
+  only:
+    - branches
+  except:
+    - master
+
+staging:
+  stage: stage
+  when: manual
+  only:
+    - /^\d+\.\d+.\d+/
+  script:
+    - echo 'Deploy'
+  environment:
+    name: stage
+    url: https://dev.example.com
+
+production:
+  stage: production
+  when: manual
+  only:
+    - /^\d+\.\d+.\d+/
+  script:
+    - echo 'Deploy'
+  environment:
+    name: production
+    url: https://dev.example.com
